@@ -30,10 +30,14 @@ namespace CScompany
         public void connectDB()
         {
             //Computer มหาลัย
-            //conn.ConnectionString = "Data Source=4924-F3;Initial Catalog=CScompany2567 ;Integrated Security=True;";
+            //conn.ConnectionString = "Data Source=4924-F3;Initial Catalog=CScompany ;Integrated Security=True;";
 
             //Computer หอ
-            conn.ConnectionString = "Data Source=DESKTOP-LIDE7TR;Initial Catalog=CScompany;Integrated Security=True";
+            //conn.ConnectionString = "Data Source=DESKTOP-LIDE7TR;Initial Catalog=CScompany;Integrated Security=True";
+
+            //conn.ConnectionString = "Data Source=DYMONJII-PC;Initial Catalog=CScompany;Integrated Security=True";
+
+            conn.ConnectionString = "Data Source=LAPTOP-CPNT5JOF;Initial Catalog=Cscompany;Integrated Security=True";
             conn.Open();
             cmd.Connection = conn;
         }
@@ -60,6 +64,7 @@ namespace CScompany
             dataGridView1.Columns[4].HeaderText = "จำนวน";
             dataGridView1.Columns[5].HeaderText = "เป็นเงิน";
             dataGridView1.Columns[6].HeaderText = "ชื่อรูป";
+
         }
 
         public void getItemType()
@@ -104,11 +109,8 @@ namespace CScompany
         {
             try
             {
-                string extension = "",pictureName = "";
-                extension = System.IO.Path.GetExtension(openFileDialog1.FileName);
-                pictureName = itemCode.Text + extension;
-                System.IO.File.Copy(openFileDialog1.FileName, "G:\\CIT0003\\CScompany\\img\\" + pictureName);
-                cmd.CommandText = "insert into item values('" + itemCode.Text + "','" + itemName.Text + "','" + typeCode.Text + "','" + price.Text + "','" + qty.Text + "','" + pictureName + "')";
+                string extensionFile = pictureCopy();
+                cmd.CommandText = "insert into item values('" + itemCode.Text + "','" + itemName.Text + "','" + typeCode.Text + "','" + price.Text + "','" + qty.Text + "','" + itemCode.Text + extensionFile + "')";
                 cmd.ExecuteNonQuery();
                 MessageBox.Show("บันทึกสำเร็จ");
                 getItem();
@@ -123,18 +125,16 @@ namespace CScompany
         {
             try
             {
-                string extension = "", pictureName = "";
-                if(openFileDialog1.FileName == "openFileDialog1") 
+                pictureDelete();
+                string extensionFile = pictureCopy();
+                if (extensionFile != "openFileDialog1" && extensionFile != "")
                 {
-                    extension = System.IO.Path.GetExtension(openFileDialog1.FileName);
-                    pictureName = itemCode.Text + extension;
-                    //System.IO.File.Delete("G:\\CIT0003\\CScompany\\img\\" + pictureName);
-                    System.IO.File.Copy(openFileDialog1.FileName, "G:\\CIT0003\\CScompany\\img\\" + pictureName);
+                    MessageBox.Show(extensionFile + "");
+                    cmd.CommandText = "update item set itemName = '" + itemName.Text + "',typeCode = '" + typeCode.Text + "',price = '" + price.Text + "',qty = '" + qty.Text + "',image = '" + itemCode.Text + extensionFile + "'  where itemCode = '" + itemCode.Text + "' ";
+                    cmd.ExecuteNonQuery();
+                    MessageBox.Show("update สำเร็จ");
+                    getItem();
                 }
-                cmd.CommandText = "update item set itemName = '" + itemName.Text + "',typeCode = '" + typeCode.Text + "',price = '" + price.Text + "',qty = '" + qty.Text + "',image = '" + pictureName + "'  where itemCode = '" + itemCode.Text + "' ";
-                cmd.ExecuteNonQuery();
-                MessageBox.Show("update สำเร็จ");
-                getItem();
             }
             catch (Exception ex)
             {
@@ -148,6 +148,7 @@ namespace CScompany
             {
                 if (MessageBox.Show("delete หรือไม่", "คำเตือน", MessageBoxButtons.OKCancel) == DialogResult.OK)
                 {
+                    pictureDelete();
                     cmd.CommandText = "delete from item where itemCode = '" + itemCode.Text + "' ";
                     cmd.ExecuteNonQuery();
                     MessageBox.Show("delete สำเร็จ");
@@ -157,6 +158,50 @@ namespace CScompany
             catch (Exception ex)
             {
                 MessageBox.Show("delete ไม่สำเร็จ");
+            }
+        }
+
+        public string pictureCopy()
+        {
+            string sourceFile = @"" + openFileDialog1.FileName;
+            string extensionFile = ".jpg";
+            string destinationFile = @"F:\CIT0003\CScompany\img\" + itemCode.Text + ".jpg";
+
+            //MessageBox.Show($"Source File: {sourceFile}\nDestination File: {destinationFile}");
+            
+            try
+            {
+                File.Copy(sourceFile, destinationFile, true);
+            }
+            catch (IOException iox)
+            {
+                //Console.WriteLine(iox.Message);
+            }
+
+            return extensionFile;
+        }
+
+        public void pictureDelete()
+        {
+            string destinationFile = @"F:\CIT0003\CScompany\img\" + itemCode.Text + ".jpg";
+
+            //MessageBox.Show($"พยายามลบไฟล์: {destinationFile}"); // แสดงเส้นทางไฟล์ก่อนลบ
+
+            try
+            {
+                if (File.Exists(destinationFile))
+                {
+                    File.Delete(destinationFile);
+                    //MessageBox.Show("ลบไฟล์สำเร็จ");
+                }
+                else
+                {
+                    //MessageBox.Show("ไม่พบไฟล์ที่ต้องการลบ");
+                }
+            }
+            catch (Exception ex)
+            {
+                //MessageBox.Show($"Error: {ex.Message}");
             }
         }
 
@@ -181,8 +226,10 @@ namespace CScompany
                     itemName.Text = rs.GetString(1);
                     price.Text = rs.GetInt32(3).ToString();
                     qty.Text = rs.GetInt32(4).ToString();
-                    try { 
-                        pictureBox1.Image = System.Drawing.Image.FromFile("G:\\CIT0003\\CScompany\\img\\" + rs.GetString(5)); 
+                    try 
+                    { 
+                        pictureName.Text = rs.GetString(5);
+                        pictureBox1.Image = System.Drawing.Image.FromFile("F:\\CIT0003\\CScompany\\img\\" + rs.GetString(5)); 
                     }
                     catch (Exception ex)
                     {
@@ -198,9 +245,14 @@ namespace CScompany
 
         private void button1_Click(object sender, EventArgs e)
         {
-            openFileDialog1.ShowDialog();
-            pictureBox1.Image = System.Drawing.Image.FromFile(openFileDialog1.FileName);
-
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                // ใช้ Bitmap เพื่อป้องกันการล็อกไฟล์
+                using (var img = Image.FromFile(openFileDialog1.FileName))
+                {
+                    pictureBox1.Image = new Bitmap(img);
+                }
+            }
         }
 
         private void amountText() {
@@ -217,6 +269,7 @@ namespace CScompany
         private void price_TextChanged(object sender, EventArgs e)
         {
             amountText();
+            amountText();
         }
 
         private void qty_TextChanged(object sender, EventArgs e)
@@ -226,8 +279,7 @@ namespace CScompany
 
         private void button2_Click(object sender, EventArgs e)
         {
-            //System.IO.File.Copy("F:\\profile\\profile (1).jpg", "F:\\CIT0003\\CScompany\\img\\1.jpg");
-            //System.IO.File.Delete("F:\\CIT0003\\CScompany\\img\\1.jpg");
+            pictureDelete();
         }
     }
 }
